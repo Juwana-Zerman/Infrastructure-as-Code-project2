@@ -1,5 +1,5 @@
 Description: >
-    Carlos Rivas / Udacity 2019
+    Juwana Zerman / Udacity 2020 Cloud DevOps Nanodegree
 
 Parameters:
 
@@ -76,7 +76,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       VPCZoneIdentifier:
-      - Fn::ImportValue: 
+      - Fn::ImportValue:
           !Sub "${EnvironmentName}-PRIV-NETS"
       LaunchConfigurationName:
         Ref: WebAppLaunchConfig
@@ -125,6 +125,6 @@ Resources:
       Port: 8080
       Protocol: HTTP
       UnhealthyThresholdCount: 5
-      VpcId: 
+      VpcId:
         Fn::ImportValue:
           Fn::Sub: "${EnvironmentName}-VPCID"
