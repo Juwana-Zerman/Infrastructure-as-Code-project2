@@ -24,6 +24,11 @@ Resources:
         FromPort: 80
         ToPort: 80
         CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: name
+          Value: !Sub ${EnvironmentName} LB Sec Group
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
   WebServerSecGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -33,18 +38,30 @@ Resources:
           !Sub "${EnvironmentName}-VPCID"
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: 8080
-        ToPort: 8080
+        FromPort: 80
+        ToPort: 80
         CidrIp: 0.0.0.0/0
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: 0.0.0.0/0
+      # - IpProtocol: tcp
+      #   FromPort: 22
+      #   ToPort: 22
+      #   CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
       - IpProtocol: tcp
         FromPort: 0
         ToPort: 65535
         CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: name
+          Value: !Sub ${EnvironmentName} Web Server Sec Group
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+
+  ProfileWithRolesForOurApp:
+    Type: AWS:IAM::InstanceProfile
+    Properties:
+      Roles:
+        - UdacityS3ReadOnlyEC2
+
   WebAppLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
@@ -52,21 +69,19 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           # Install docker
-          apt-get update
-          apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-          add-apt-repository \
-          "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-          $(lsb_release -cs) \
-          stable"
-          apt-get update
-          apt-get install -y docker-ce
-          usermod -aG docker ubuntu
-          docker run -p 8080:8080 tomcat:8.0
-      ImageId: ami-005bdb005fb00e791
+          apt-get update -y
+          apt-get install unzip awscli -y
+          apt-get install apache2 -y
+          systemctl start apache2.service
+          cd /var/www/html
+          aws s3 cp s3://udacity-project-two-web-app-new/udacity.zip .
+          unzip -o udacity.zip
+      ImageId:  ami-0d1cd67c26f5fca19 #AMI ID for Ubuntu
       KeyName: that-one
       SecurityGroups:
       - Ref: WebServerSecGroup
+      IamInstanceProfile:
+        Ref: ProfileWithRolesForOurApp
       InstanceType: t3.small
       BlockDeviceMappings:
       - DeviceName: "/dev/sdk"
@@ -80,8 +95,8 @@ Resources:
           !Sub "${EnvironmentName}-PRIV-NETS"
       LaunchConfigurationName:
         Ref: WebAppLaunchConfig
-      MinSize: '3'
-      MaxSize: '5'
+      MinSize: '4'
+      MaxSize: '4'
       TargetGroupARNs:
       - Ref: WebAppTargetGroup
   WebAppLB:
@@ -92,6 +107,11 @@ Resources:
       - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
       SecurityGroups:
       - Ref: LBSecGroup
+      Tags:
+        - Key: name
+          Value: !Sub ${EnvironmentName} Web LoadBalancer
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -122,9 +142,38 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 8
       HealthyThresholdCount: 2
-      Port: 8080
+      Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 5
       VpcId:
         Fn::ImportValue:
           Fn::Sub: "${EnvironmentName}-VPCID"
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId:  ami-0d1cd67c26f5fca19 #AMI ID for Ubuntu image.
+      InstanceType: t3.small
+      BlockDeviceMappings:
+          - DeviceName: "/dev/sdk"
+            Ebs:
+              VolumeSize: '10'
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          SubnetId:
+            Fn::ImportValue:
+              !Sub "${EnvironmentName}-PUB2-SN"
+          GroupSet:
+           - !Ref WebServerSecGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Bastion Host
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+
+  Outputs:
+    WebAppLB:
+      Description: The load balancer URL
+      Value: !Join ["", ["http://", !GetAtt WebAppLB.DNSName,]]
+      Export:
+        Name: !Sub ${EnvironmentName}-DNS-NAME
