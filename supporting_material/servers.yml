@@ -55,7 +55,7 @@ Resources:
         - Key: EnvironmentName
           Value: !Ref EnvironmentName
 
-  ProfileWithRolesForOurApp:
+  IAMRolesForOurApp:
     Type: AWS:IAM::InstanceProfile
     Properties:
       Roles:
@@ -81,7 +81,7 @@ Resources:
       SecurityGroups:
       - Ref: WebServerSecGroup
       IamInstanceProfile:
-        Ref: ProfileWithRolesForOurApp
+        Ref: IAMRolesForOurApp
       InstanceType: t3.small
       BlockDeviceMappings:
       - DeviceName: "/dev/sdk"
