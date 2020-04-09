@@ -1,6 +1,6 @@
 Description: >
     Juwana Zerman / Udacity Cloud DevOps Nanodegree / Project 2
-    This template deploys a VPC, with a pair of public and private subnets spread across two Availability Zones. It deploys an Internet Gateway, with a default route on the public subnets. It deploys a pair of NAT Gateways (one in each AZ), and default routes for them in the private subnets.
+    This template will deploy a VPC with pairs of public and private subnets spread across two Availability Zones. An Internet Gateway with a default route on the public subnets will be used along with a NAT Gateway in each Availability Zone with default routes for them in the private subnets.
 
 Parameters:
 
@@ -34,7 +34,6 @@ Parameters:
         Default: 10.0.4.0/24
 
 Resources:
-
     VPC:
         Type: AWS::EC2::VPC
         Properties:
@@ -153,31 +152,6 @@ Resources:
             RouteTableId: !Ref PublicRouteTable
             SubnetId: !Ref PublicSubnet2
 
-    NatGateway1EIP:
-    Type: AWS::EC2::EIP
-    DependsOn: InternetGatewayAttachment
-    Properties:
-      Domain: vpc
-
-    NatGateway2EIP:
-    Type: AWS::EC2::EIP
-    DependsOn: InternetGatewayAttachment
-    Properties:
-      Domain: vpc
-
-    NatGateway1:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatGateway1EIP.AllocationId
-      SubnetId: !Ref PublicSubnet1
-
-    NatGateway2:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatGateway2EIP.AllocationId
-      SubnetId: !Ref PublicSubnet2
-
-
     PrivateRouteTable1:
         Type: AWS::EC2::RouteTable
         Properties:
@@ -221,7 +195,6 @@ Resources:
             SubnetId: !Ref PrivateSubnet2
 
 Outputs:
-
     VPC:
         Description: A reference to the created VPC
         Value: !Ref VPC
