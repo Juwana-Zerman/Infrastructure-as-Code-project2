@@ -1,7 +1,6 @@
 Description: >
     Juwana Zerman / Udacity Cloud DevOps Nanodegree / Project 2
-    This template will deploy a VPC with pairs of public and private subnets spread across two Availability Zones. An Internet Gateway with a default route on the public subnets will be used along with a NAT Gateway in each Availability Zone with default routes for them in the private subnets.
-
+    
 Parameters:
 
     EnvironmentName:

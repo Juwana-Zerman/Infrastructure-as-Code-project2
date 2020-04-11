@@ -1,7 +1,7 @@
 [
 	{
 		"ParameterKey": "EnvironmentName",
-		"ParameterValue": "DWAPPProject2"
+		"ParameterValue": "DWAPProject2"
 	},
 	{
 		"ParameterKey": "VpcCIDR",
