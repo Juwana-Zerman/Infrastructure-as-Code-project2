@@ -46,6 +46,20 @@ Resources:
         ToPort: 65535
         CidrIp: 0.0.0.0/0
 
+  IamS3BucketsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'ec2.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Path: "/"
+
   IAMRolesForInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -66,19 +80,6 @@ Resources:
       Roles:
       - Ref: IamS3BucketsRole
 
-  IamS3BucketsRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: "/"
 
   WebAppLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -86,23 +87,17 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>/dev/console)
           apt-get update -y
           apt-get install unzip awscli -y
           apt-get install apache2 -y
           systemctl start apache2.service
-          cd /var/www/html
-          rm index.html
-          aws s3 cp s3://udacityproject2dwap/index.html .
+          systemctl enable apache2
+          rm ../../var/www/html/index.html
+          wget -P ../../var/www/html https://udacityproject2dwap.s3-website-us-east-1.amazonaws.com/index.html
+          systemctl restart apache2.service
 
-
-        # apt update -y
-        # apt install -y apache2
-        # systemctl start apache2
-        # systemctl enable apache2
-        # rm ../../var/www/html/index.html
-        # wget -P ../../var/www/html https://s3.us-east-2.amazonaws.com/test-udagram-1/index.html
-
-      ImageId: ami-07ebfd5b3428b6f4d #AMI ID for Ubuntu
+      ImageId: ami-085925f297f89fce1 #AMI ID for Ubuntu
       IamInstanceProfile: !Ref IAMRolesForInstanceProfile
       SecurityGroups:
       - Ref: WebServerSecGroup
@@ -137,10 +132,8 @@ Resources:
     Properties:
       DefaultActions:
       - Type: forward
-        TargetGroupArn:
-          Ref: WebAppTargetGroup
-      LoadBalancerArn:
-        Ref: WebAppLB
+        TargetGroupArn: !Ref WebAppTargetGroup
+      LoadBalancerArn: !Ref WebAppLB
       Port: '80'
       Protocol: HTTP
   ALBListenerRule:
@@ -157,10 +150,10 @@ Resources:
   WebAppTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckIntervalSeconds: 35
+      HealthCheckIntervalSeconds: 10
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 30
+      HealthCheckTimeoutSeconds: 8
       HealthyThresholdCount: 2
       Port: 80
       Protocol: HTTP
@@ -173,7 +166,7 @@ Resources:
   # BastionHost:
   #   Type: AWS::EC2::Instance
   #   Properties:
-  #     ImageId:  ami-07ebfd5b3428b6f4d #AMI ID for Ubuntu image.
+  #     ImageId: ami-085925f297f89fce1  #AMI ID for Ubuntu image.
   #     InstanceType: t3.small
   #     BlockDeviceMappings:
   #         - DeviceName: "/dev/sdk"
@@ -193,9 +186,15 @@ Resources:
   #       - Key: EnvironmentName
   #         Value: !Ref EnvironmentName
 
-  Outputs:
-    LBEndpoint:
-      Description: The load balancer DNS URL
-      Value: !Join ["", ["http://", !GetAtt WebAppLB.DNSName]]
-      Export:
-        Name: !Sub ${EnvironmentName}-DNS-NAME
+Outputs:
+  LoadBalancer:
+    Description: The load balancer DNS URL
+    Value: !Join ["", ["http://", !GetAtt WebAppLB.DNSName]]
+    Export:
+      Name: !Sub ${EnvironmentName}-DNS-NAME
+
+  # BastionHost:
+  #   Description: Bastion Host
+  #   Value: !Ref BastionHost
+  #   Export:
+  #     Name: !Sub ${EnvironmentName}-Bastion

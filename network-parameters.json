@@ -1,7 +1,7 @@
 [
 	{
 		"ParameterKey": "EnvironmentName",
-		"ParameterValue": "DWAPProject2"
+		"ParameterValue": "udacityproject2dwap"
 	},
 	{
 		"ParameterKey": "VpcCIDR",
