@@ -87,17 +87,13 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>/dev/console)
           apt-get update -y
           apt-get install unzip awscli -y
           apt-get install apache2 -y
+          cd /var/www/html
           systemctl start apache2.service
-          systemctl enable apache2
-          rm ../../var/www/html/index.html
-          wget -P ../../var/www/html https://udacityproject2dwap.s3-website-us-east-1.amazonaws.com/index.html
-          systemctl restart apache2.service
-
-      ImageId: ami-085925f297f89fce1 #AMI ID for Ubuntu
+          echo "It Works! Udagram, for Udacity!" > index.html
+      ImageId: ami-07ebfd5b3428b6f4d #AMI ID for Ubuntu
       IamInstanceProfile: !Ref IAMRolesForInstanceProfile
       SecurityGroups:
       - Ref: WebServerSecGroup
@@ -150,10 +146,10 @@ Resources:
   WebAppTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckIntervalSeconds: 10
+      HealthCheckIntervalSeconds: 30
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 8
+      HealthCheckTimeoutSeconds: 20
       HealthyThresholdCount: 2
       Port: 80
       Protocol: HTTP
@@ -162,30 +158,6 @@ Resources:
         Fn::ImportValue:
           Fn::Sub: "${EnvironmentName}-VPCID"
 
-
-  # BastionHost:
-  #   Type: AWS::EC2::Instance
-  #   Properties:
-  #     ImageId: ami-085925f297f89fce1  #AMI ID for Ubuntu image.
-  #     InstanceType: t3.small
-  #     BlockDeviceMappings:
-  #         - DeviceName: "/dev/sdk"
-  #           Ebs:
-  #             VolumeSize: '10'
-  #     NetworkInterfaces:
-  #       - AssociatePublicIpAddress: "true"
-  #         DeviceIndex: "0"
-  #         SubnetId:
-  #           Fn::ImportValue:
-  #             !Sub "${EnvironmentName}-PUB2-SN"
-  #         GroupSet:
-  #          - !Ref WebServerSecGroup
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub ${EnvironmentName} Bastion Host
-  #       - Key: EnvironmentName
-  #         Value: !Ref EnvironmentName
-
 Outputs:
   LoadBalancer:
     Description: The load balancer DNS URL
@@ -193,8 +165,3 @@ Outputs:
     Export:
       Name: !Sub ${EnvironmentName}-DNS-NAME
 
-  # BastionHost:
-  #   Description: Bastion Host
-  #   Value: !Ref BastionHost
-  #   Export:
-  #     Name: !Sub ${EnvironmentName}-Bastion
