@@ -2,9 +2,6 @@
 
 This project project purpose was to deploy infractructure as code to AWS. The project uses scripts to launch Cloudformation stacks to deploy an autoscaling app to the AWS Cloud.
 
-### Link to DNS URL
-
-[Click Here](http://udaci-WebAp-L8EH7XN7D1QE-1645863624.us-east-1.elb.amazonaws.com)
 
 ### Deployment
 
