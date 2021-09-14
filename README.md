@@ -1,6 +1,6 @@
 ## Cloud DevOps AWS Infrastructure as Code - Project 2
 
-This project purpose was to deploy infractructure as code to AWS. The project uses scripts to launch Cloudformation stacks to deploy an autoscaling app to the AWS Cloud.
+This project purpose was to deploy infrastructure as code to AWS. The project uses scripts to launch Cloudformation stacks to deploy an autoscaling app to the AWS Cloud.
 
 
 ### Deployment
