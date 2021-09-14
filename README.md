@@ -22,3 +22,4 @@ Once completed the stacks were deleted using:
 * Bash
 * YAML
 * JSON
+* CloudFormation
